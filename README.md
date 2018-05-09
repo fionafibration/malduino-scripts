@@ -9,8 +9,8 @@ Non-Malicious (pranks):
 0011: Upside down desktop - Windows  
 0100: Windows 93 prank - Windows  
 0101: Install NCage on Chrome - Windows  
-Malicious:  
   
+Malicious:  
 1111: Meterpreter through powershell - Windows  
 1110 (planned): Meterpreter through wget - Windows (requires webserver)  
 1101: Wifi Password Grabber through FTP - Windows (requires FTP server)  
