@@ -14,3 +14,4 @@ Malicious:
 1111: Meterpreter through powershell - Windows (requires metasploit)  
 1110: Meterpreter through wget - Windows (requires pastebin and metasploit)  
 1101: Wifi Password Grabber through FTP - Windows (requires FTP server)  
+1100: Mimikatz download and export - Windows (requires FTP server and optionally webserver)  
