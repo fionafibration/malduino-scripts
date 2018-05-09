@@ -1,7 +1,7 @@
 REM Takes a screenshot of desktop after minimizing all windows, then sets it to background and hides desktop icons.
 REM By Darren Kitchen
 GUI d
-DELAY 500
+DELAY 1000
 PRINTSCREEN
 DELAY 100
 MENU
