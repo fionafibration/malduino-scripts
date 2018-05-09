@@ -79,6 +79,13 @@ bool equals(char* strA, int start, int end, char* strB, int strLen)
     return true;
 }
 
+void blinkLED()
+{
+    digitalWrite(ledPin, LOW);
+    delay(750);
+    digitalWrite(ledPin, HIGH);
+}
+
 bool capsLED()
 {
     if (BootKeyboard.getLeds() & LED_CAPS_LOCK)
@@ -179,6 +186,14 @@ void runLine()
         else if (equalsBuffer(0, space, "RANDOMMAX"))
         {
             rMax = getInt(buf, space);
+        }
+        else if (equalsBuffer(0, space, "BLINK"))
+        {
+            blinkLED();
+        }
+        else if (equalsBuffer(0, space, "CRACK"))
+        {
+            crackPhone();
         }
         else if (equalsBuffer(0, space, "REM") || equalsBuffer(0, space, "REPEAT"))
         {
@@ -506,11 +521,6 @@ void runCommand(int s, int e)
     else if (equalsBuffer(s, e, "WAKE_UP"))
     {
         BootKeyboard.write(SYSTEM_WAKE_UP);
-    }
-
-    else if (equalsBuffer(s, e, "CRACK"))
-    {
-        crackPhone();
     }
     #ifdef debug
     else
