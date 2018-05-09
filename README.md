@@ -11,6 +11,6 @@ Non-Malicious (pranks):
 0101: Install NCage on Chrome - Windows  
   
 Malicious:  
-1111: Meterpreter through powershell - Windows (requires metasploit)
-1110: Meterpreter through wget - Windows (requires pastebin and metaaploit)  
+1111: Meterpreter through powershell - Windows (requires metasploit)  
+1110: Meterpreter through wget - Windows (requires pastebin and metasploit)  
 1101: Wifi Password Grabber through FTP - Windows (requires FTP server)  
