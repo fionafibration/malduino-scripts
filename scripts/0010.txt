@@ -1,0 +1,3 @@
+REM Change screen orientation to upside down
+DELAY 500
+CTRL ALT DOWN
