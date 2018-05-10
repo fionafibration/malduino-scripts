@@ -1,7 +1,7 @@
 REM Opens windows93.net and fullscreens it
-DELAY 1000
+DELAY 2000
 GUI r
-DELAY 750
+DELAY 1000
 STRING cmd /c start http://windows93.net
 DELAY 1500
 F11

