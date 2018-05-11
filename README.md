@@ -9,6 +9,7 @@ Non-Malicious (pranks):
 0011: Upside down desktop - Windows  
 0100: Windows 93 prank - Windows  
 0101: Install NCage on Chrome - Windows  
+0110: Rickroll at 4:20pm - Windows  
   
 Malicious:  
 1111: Meterpreter through powershell - Windows (requires metasploit)  
