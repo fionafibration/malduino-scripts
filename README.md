@@ -13,6 +13,5 @@ Non-Malicious (pranks):
   
 Malicious:  
 1111: Meterpreter through powershell - Windows (requires metasploit)  
-1110: Meterpreter through wget - Windows (requires pastebin and metasploit)  
-1101: Mimikatz download and export - Windows (requires webserver with PHP)   
-1100: Lazagne download and export - Windows (requires webserver with PHP)
+1110: Meterpreter through wget - Windows (requires pastebin and metasploit)    
+1101: Lazagne download and export - Windows (requires webserver with PHP)
