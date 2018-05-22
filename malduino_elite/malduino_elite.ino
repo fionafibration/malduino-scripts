@@ -441,7 +441,7 @@ void runCommand(int s, int e)
     {
         BootKeyboardWrite(KEYPAD_ENTER);
     }
-    else if (equalsBuffer(s, e, "NUM_Minus"))
+    else if (equalsBuffer(s, e, "NUM_MINUS"))
     {
         BootKeyboardWrite(KEYPAD_MINUS);
     }
@@ -472,7 +472,7 @@ void runCommand(int s, int e)
     {
         Mouse.press();
     }
-    else if (equalsBuffer(s, e, "PRESS_LEFT"))
+    else if (equalsBuffer(s, e, "PRESS_RIGHT"))
     {
         Mouse.press(MOUSE_RIGHT);
     }
@@ -484,7 +484,7 @@ void runCommand(int s, int e)
     {
         Mouse.release();
     }
-    else if (equalsBuffer(s, e, "RELEASE_LEFT"))
+    else if (equalsBuffer(s, e, "RELEASE_RIGHT"))
     {
         Mouse.release(MOUSE_RIGHT);
     }
