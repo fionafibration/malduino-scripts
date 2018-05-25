@@ -1,5 +1,5 @@
 REM Opens a meterpreter using a pastebin link
-REM See https://github.com/hak5/bashbunny-payloads/blob/master/payloads/library/remote_access/SingleSecondShell/readme.md
+REM See https://github.com/hak5darren/USB-Rubber-Ducky/wiki/Payload--Fast-Meterpreter
 REM For how to create a link to your personal shellcode
 DELAY 2000
 GUI r
