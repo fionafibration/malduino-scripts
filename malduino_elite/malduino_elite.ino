@@ -7,14 +7,15 @@
 
 #include <SPI.h>
 #include <SD.h>
-#include "HID-Project.h"
+#include <HID-Project.h>
+#include <HID-Settings.h>
 
-//#define debug true // <-- uncomment to turn serial output on
-#define CSpin 4 // Chip-Select of the SD-Card reader
+#define debug true // <-- uncomment to turn serial output on
+#define CSpin 4 //Chip-Select of the SD-Card reader
 #define ledPin 3
 #define blinkInterval 50
 
-// Dip-Switch Pins:
+//Dip-Switch Pins:
 #define dip1 6
 #define dip2 8
 #define dip3 9
@@ -38,56 +39,20 @@
 #define KEYPAD_PERIOD 235
 #define KEYPAD_PLUS 223
 #define KEYPAD_SLASH 220
-#define PRINTSCREEN 206
+#define PRINTSCREEN 206 
 
 File payload;
-char* buf = malloc(sizeof(char) * buffersize);
-char* repeatBuffer = malloc(sizeof(char) * 12);
+char* buf = malloc(sizeof(char)*buffersize);
+char* repeatBuffer = malloc(sizeof(char)*12);
 
 int bufSize = 0;
-int defaultDelay = 5;
+int defaultDelay = 150;
 int defaultCharDelay = 5;
 bool ledOn = true;
-bool useFeedback = false;
-bool finished = false;
+int startingDelay = 15;
 int rMin = -100;
 int rMax = 100;
-
-int getSpace(int start, int end)
-{
-  for (int i = start; i < end; i++)
-  {
-    if (buf[i] == ' ')
-    {
-      return i;
-    }
-  }
-  return -1;
-}
-
-bool equals(char* strA, int start, int end, char* strB, int strLen)
-{
-  if (end - start != strLen)
-  {
-    return false;
-  }
-  for (int i = 0; i < strLen; i++)
-  {
-    if (strA[start + i] != strB[i])
-    {
-      return false;
-    }
-  }
-  return true;
-}
-
-void blinkLED()
-{
-  digitalWrite(ledPin, LOW);
-  delay(750);
-  digitalWrite(ledPin, HIGH);
-}
-
+bool finished = false;
 bool capsLED()
 {
   if (BootKeyboard.getLeds() & LED_CAPS_LOCK)
@@ -106,134 +71,78 @@ bool numLED()
   return false;
 }
 
-int toPositive(int num)
-{
-  if (num < 0)
-  {
-    return num * (-1);
+
+int getSpace(int start, int end){
+  for(int i=start;i<end;i++){
+    if(buf[i] == ' ') return i;
   }
-  else
-  {
-    return num;
-  }
+  return -1;
 }
 
-bool equalsBuffer(int start, int end, char* str)
-{
-  return equals(buf, start, end, str, String(str).length());
+bool equals(char* strA, int start, int end, char* strB, int strLen){
+  if(end-start != strLen) return false;
+  for(int i=0;i<strLen;i++){
+    if(strA[start+i] != strB[i]) return false;
+  }
+  return true;
 }
 
-int getInt(char* str, int pos)
-{
-  if (equals(str, pos + 1, pos + 7, "RANDOM", 6))
-  {
+int toPositive(int num){
+  if(num < 0) return num*(-1);
+  else return num;
+}
+
+bool equalsBuffer(int start, int end, char* str){ return equals(buf, start, end, str, String(str).length()); }
+
+int getInt(char* str, int pos){
+  if(equals(str, pos+1, pos+7, "RANDOM", 6)){
     return random(rMin, rMax);
-  }
-  else
-  {
-    return String(str).substring(pos + 1, pos + 6).toInt();
+  }else{
+    return String(str).substring(pos+1,pos+6).toInt();
   }
 }
 
-void BootKeyboardWrite(uint8_t c)
-{
+void BootKeyboardWrite(uint8_t c){  
   BootKeyboard.press(c);
   delay(defaultCharDelay);
   BootKeyboard.release(c);
 }
 
-void runLine()
-{
-#ifdef debug
-  Serial.println(F("run: '") + String(buf).substring(0, bufSize) + F("' (") + (String)bufSize + F(")"));
-#endif
+void runLine(){
+  #ifdef debug 
+    Serial.println("run: '"+String(buf).substring(0,bufSize)+"' ("+(String)bufSize+")");
+  #endif
 
-  int space = getSpace(0, bufSize);
+  int space = getSpace(0,bufSize);
 
-  if (space == -1)
-  {
-    runCommand(0, bufSize);
-  }
-  else
-  {
-    if (equalsBuffer(0, space, "DEFAULTDELAY") || equalsBuffer(0, space, "DEFAULT_DELAY"))
-    {
-      defaultDelay = getInt(buf, space);
+  if(space == -1) runCommand(0,bufSize);
+  else{
+    if(equalsBuffer(0,space,"DEFAULTDELAY") || equalsBuffer(0,space,"DEFAULT_DELAY")) defaultDelay = getInt(buf,space);
+    else if(equalsBuffer(0,space,"DEFAULTCHARDELAY") || equalsBuffer(0,space,"DEFAULT_CHAR_DELAY")) defaultCharDelay = getInt(buf,space);
+    else if(equalsBuffer(0,space,"DELAY")) delay(getInt(buf,space));
+    else if(equalsBuffer(0,space,"STRING")){
+      for(int i=space+1;i<bufSize;i++) BootKeyboardWrite(buf[i]);
     }
-    else if (equalsBuffer(0, space, "DEFAULTCHARDELAY")
-             || equalsBuffer(0, space, "DEFAULT_CHAR_DELAY"))
-    {
-      defaultCharDelay = getInt(buf, space);
+    else if(equalsBuffer(0,space,"MOUSE")){
+      int nSpace = getSpace(space+1,bufSize);
+      int x = getInt(buf,space);
+      int y = getInt(buf,nSpace);
+      Mouse.move(x,y);
+      #ifdef debug 
+        Serial.println("Move mouse "+(String)x+" "+(String)y);
+      #endif
     }
-    else if (equalsBuffer(0, space, "DELAY"))
-    {
-      delay(getInt(buf, space));
-    }
-    else if (equalsBuffer(0, space, "STRING"))
-    {
-      for (int i = space + 1; i < bufSize; i++)
-      {
-        BootKeyboardWrite(buf[i]);
-      }
-    }
-    else if (equalsBuffer(0, space, "MOUSE"))
-    {
-      int nSpace = getSpace(space + 1, bufSize);
-      int x = getInt(buf, space);
-      int y = getInt(buf, nSpace);
-      Mouse.move(x, y);
-#ifdef debug
-      Serial.println(F("Move mouse ") + (String)x + F(" ") + (String)y);
-#endif
-    }
-    else if (equalsBuffer(0, space, "SCROLL"))
-    {
-      Mouse.move(0, 0, getInt(buf, space));
-    }
-    else if (equalsBuffer(0, space, "RANDOMMIN"))
-    {
-      rMin = getInt(buf, space);
-    }
-    else if (equalsBuffer(0, space, "RANDOMMAX"))
-    {
-      rMax = getInt(buf, space);
-    }
-    else if (equalsBuffer(0, space, "BLINK"))
-    {
-      blinkLED();
-    }
-    else if (equalsBuffer(0, space, "CRACK"))
-    {
-      crackPhone();
-    }
-    else if (equalsBuffer(0, space, "REM") || equalsBuffer(0, space, "REPEAT"))
-    {
-      // Do nothing
-    }
-    else if (equalsBuffer(0, space, "FEEDBACK"))
-    {
-        if (numLED())
-        {
-          digitalWrite(ledPin, HIGH);
-          Serial.println(F("Numlock feedback received, turned feedback LED on!"));
-        }
-    }
-    else if (equalsBuffer(0, space, "FEEDBACKON"))
-    {
-        useFeedback = true;
-        Serial.println(F("Now waiting for numlock feedback after finishing script"));
-    }
-    else
-    {
-      runCommand(0, space);
-      while (space >= 0 && space < bufSize)
-      {
-        int nSpace = getSpace(space + 1, bufSize);
-        if (nSpace == -1)
-        {
-          nSpace = bufSize;
-        }
-        runCommand(space + 1, nSpace);
+    else if(equalsBuffer(0,space,"SCROLL")) Mouse.move(0,0,getInt(buf,space));
+    else if(equalsBuffer(0,space,"RANDOMMIN")) rMin = getInt(buf,space);
+    else if(equalsBuffer(0,space,"RANDOMMAX")) rMax = getInt(buf,space);
+    else if(equalsBuffer(0,space,"REM") || equalsBuffer(0,space,"REPEAT")){}
+    else if(equalsBuffer(0,space,"FEEDBACK")) finished = numLED();
+    else{
+      runCommand(0,space);
+      while(space >= 0 && space < bufSize){
+        int nSpace = getSpace(space+1,bufSize);
+        if(nSpace == -1) nSpace = bufSize;
+        runCommand(space+1,nSpace);
         space = nSpace;
       }
     }
@@ -243,500 +152,228 @@ void runLine()
   delay(defaultDelay);
 }
 
-void crackPhone()
-{
-  for (int i = 0; i <= 9999; i++)
-  {
-    String stri = String(i);
-    String code;
-    if (stri.length() < 4)
-    {
-      String pre = "";
-      for (int j = 0; j < 4 - stri.length(); j++)
-      {
-        pre += "0";
-      }
-      code = pre + stri;
-    }
-    else
-    {
-      code = stri;
-    }
-    BootKeyboard.println(code);
-  }
-}
+void runCommand(int s, int e){
 
-void runCommand(int s, int e)
-{
+  #ifdef debug 
+    Serial.println("Press '"+String(buf).substring(s,e)+"'");
+  #endif
+  
+  if(e - s < 2) BootKeyboard.press(buf[s]);
+  else if(equalsBuffer(s,e,"ENTER")) BootKeyboard.press(KEY_RETURN);
+  else if(equalsBuffer(s,e,"GUI") || equalsBuffer(s,e,"WINDOWS")) BootKeyboard.press(KEY_LEFT_GUI);
+  else if(equalsBuffer(s,e,"SHIFT")) BootKeyboard.press(KEY_LEFT_SHIFT);
+  else if(equalsBuffer(s,e,"ALT")  ||equalsBuffer(s,e,"ALT_LEFT") ||equalsBuffer(s,e,"ALTLEFT")) BootKeyboard.press(KEY_LEFT_ALT);
+  else if(equalsBuffer(s,e,"ALT_RIGHT") ||equalsBuffer(s,e,"ALTRIGHT")) BootKeyboard.press(KEY_RIGHT_ALT);
+  else if(equalsBuffer(s,e,"CTRL") || equalsBuffer(s,e,"CONTROL")) BootKeyboard.press(KEY_LEFT_CTRL);
+  else if(equalsBuffer(s,e,"CAPSLOCK")) BootKeyboard.press(KEY_CAPS_LOCK);
+  else if(equalsBuffer(s,e,"DELETE")) BootKeyboard.press(KEY_DELETE);
+  else if(equalsBuffer(s,e,"END")) BootKeyboard.press(KEY_END);
+  else if(equalsBuffer(s,e,"ESC") || equalsBuffer(s,e,"ESCAPE")) BootKeyboard.press(KEY_ESC);
+  else if(equalsBuffer(s,e,"HOME")) BootKeyboard.press(KEY_HOME);
+  else if(equalsBuffer(s,e,"INSERT")) BootKeyboard.press(KEY_INSERT);
+  else if(equalsBuffer(s,e,"PAGEUP")) BootKeyboard.press(KEY_PAGE_UP);
+  else if(equalsBuffer(s,e,"PAGEDOWN")) BootKeyboard.press(KEY_PAGE_DOWN);
+  else if(equalsBuffer(s,e,"SPACE")) BootKeyboard.press(' ');
+  else if(equalsBuffer(s,e,"TAB")) BootKeyboard.press(KEY_TAB);
+  else if(equalsBuffer(s,e,"BACKSPACE")) BootKeyboard.press(KEY_BACKSPACE);
+  
+  else if(equalsBuffer(s,e,"UP") || equalsBuffer(s,e,"UPARROW")) BootKeyboard.press(KEY_UP_ARROW);
+  else if(equalsBuffer(s,e,"DOWN") || equalsBuffer(s,e,"DOWNARROW")) BootKeyboard.press(KEY_DOWN_ARROW);
+  else if(equalsBuffer(s,e,"LEFT") || equalsBuffer(s,e,"LEFTARROW")) BootKeyboard.press(KEY_LEFT_ARROW);
+  else if(equalsBuffer(s,e,"RIGHT") || equalsBuffer(s,e,"RIGHTARROW")) BootKeyboard.press(KEY_RIGHT_ARROW);
+  
+  else if(equalsBuffer(s,e,"PRINTSCREEN")) BootKeyboard.press(PRINTSCREEN);
+
+  else if(equalsBuffer(s,e,"F1")) BootKeyboard.press(KEY_F1);
+  else if(equalsBuffer(s,e,"F2")) BootKeyboard.press(KEY_F2);
+  else if(equalsBuffer(s,e,"F3")) BootKeyboard.press(KEY_F3);
+  else if(equalsBuffer(s,e,"F4")) BootKeyboard.press(KEY_F4);
+  else if(equalsBuffer(s,e,"F5")) BootKeyboard.press(KEY_F5);
+  else if(equalsBuffer(s,e,"F6")) BootKeyboard.press(KEY_F6);
+  else if(equalsBuffer(s,e,"F7")) BootKeyboard.press(KEY_F7);
+  else if(equalsBuffer(s,e,"F8")) BootKeyboard.press(KEY_F8);
+  else if(equalsBuffer(s,e,"F9")) BootKeyboard.press(KEY_F9);
+  else if(equalsBuffer(s,e,"F10")) BootKeyboard.press(KEY_F10);
+  else if(equalsBuffer(s,e,"F11")) BootKeyboard.press(KEY_F11);
+  else if(equalsBuffer(s,e,"F12")) BootKeyboard.press(KEY_F12);
+
+  else if(equalsBuffer(s,e,"NUM_0")) BootKeyboardWrite(KEYPAD_0);
+  else if(equalsBuffer(s,e,"NUM_1")) BootKeyboardWrite(KEYPAD_1);
+  else if(equalsBuffer(s,e,"NUM_2")) BootKeyboardWrite(KEYPAD_2);
+  else if(equalsBuffer(s,e,"NUM_3")) BootKeyboardWrite(KEYPAD_3);
+  else if(equalsBuffer(s,e,"NUM_4")) BootKeyboardWrite(KEYPAD_4);
+  else if(equalsBuffer(s,e,"NUM_5")) BootKeyboardWrite(KEYPAD_5);
+  else if(equalsBuffer(s,e,"NUM_6")) BootKeyboardWrite(KEYPAD_6);
+  else if(equalsBuffer(s,e,"NUM_7")) BootKeyboardWrite(KEYPAD_7);
+  else if(equalsBuffer(s,e,"NUM_8")) BootKeyboardWrite(KEYPAD_8);
+  else if(equalsBuffer(s,e,"NUM_9")) BootKeyboardWrite(KEYPAD_9);
+  else if(equalsBuffer(s,e,"NUM_ASTERIX")) BootKeyboardWrite(KEYPAD_ASTERIX);
+  else if(equalsBuffer(s,e,"NUM_ENTER")) BootKeyboardWrite(KEYPAD_ENTER);
+  else if(equalsBuffer(s,e,"NUM_MINUS")) BootKeyboardWrite(KEYPAD_MINUS);
+  else if(equalsBuffer(s,e,"NUM_PERIOD")) BootKeyboardWrite(KEYPAD_PERIOD);
+  else if(equalsBuffer(s,e,"NUM_PLUS")) BootKeyboardWrite(KEYPAD_PLUS);
+
+  else if(equalsBuffer(s,e,"CLICK")  || equalsBuffer(s,e,"CLICK_LEFT") || equalsBuffer(s,e,"MOUSECLICK")) Mouse.click();
+  else if(equalsBuffer(s,e,"CLICK_RIGHT")) Mouse.click(MOUSE_RIGHT);
+  else if(equalsBuffer(s,e,"CLICK_MIDDLE")) Mouse.click(MOUSE_MIDDLE);
+  
+  else if(equalsBuffer(s,e,"PRESS") || equalsBuffer(s,e,"PRESS_LEFT")) Mouse.press();
+  else if(equalsBuffer(s,e,"PRESS_RIGHT")) Mouse.press(MOUSE_RIGHT);
+  else if(equalsBuffer(s,e,"PRESS_MIDDLE")) Mouse.press(MOUSE_MIDDLE);
+  else if(equalsBuffer(s,e,"RELEASE") || equalsBuffer(s,e,"RELEASE_LEFT")) Mouse.release();
+  else if(equalsBuffer(s,e,"RELEASE_RIGHT")) Mouse.release(MOUSE_RIGHT);
+  else if(equalsBuffer(s,e,"RELEASE_MIDDLE")) Mouse.release(MOUSE_MIDDLE);
+
+
+  else if (equalsBuffer(s, e, "VOLUME_UP")) BootKeyboard.write(MEDIA_VOLUME_UP);
+  else if (equalsBuffer(s, e, "VOLUME_DOWN")) BootKeyboard.write(MEDIA_VOLUME_DOWN);
+  else if (equalsBuffer(s, e, "PAUSE")) BootKeyboard.write(MEDIA_PLAY_PAUSE);
+  else if (equalsBuffer(s, e, "STOP")) BootKeyboard.write(MEDIA_STOP);
+
+  else if (equalsBuffer(s, e, "SHUT_DOWN")) BootKeyboard.write(SYSTEM_POWER_DOWN);
+  else if (equalsBuffer(s, e, "SLEEP")) BootKeyboard.write(SYSTEM_SLEEP);
+  else if (equalsBuffer(s, e, "WAKE_UP")) BootKeyboard.write(SYSTEM_WAKE_UP);
+
 #ifdef debug
-  Serial.println(F("Press '") + String(buf).substring(s, e) + F("'"));
-#endif
-
-  if (e - s < 2)
-  {
-    BootKeyboard.press(buf[s]);
-  }
-  else if (equalsBuffer(s, e, "ENTER"))
-  {
-    BootKeyboard.press(KEY_RETURN);
-  }
-  else if (equalsBuffer(s, e, "GUI") || equalsBuffer(s, e, "WINDOWS"))
-  {
-    BootKeyboard.press(KEY_LEFT_GUI);
-  }
-  else if (equalsBuffer(s, e, "SHIFT"))
-  {
-    BootKeyboard.press(KEY_LEFT_SHIFT);
-  }
-  else if (equalsBuffer(s, e, "ALT") || equalsBuffer(s, e, "ALT_LEFT")
-           || equalsBuffer(s, e, "ALTLEFT"))
-  {
-    BootKeyboard.press(KEY_LEFT_ALT);
-  }
-  else if (equalsBuffer(s, e, "ALT_RIGHT") || equalsBuffer(s, e, "ALTRIGHT"))
-  {
-    BootKeyboard.press(KEY_RIGHT_ALT);
-  }
-  else if (equalsBuffer(s, e, "CTRL") || equalsBuffer(s, e, "CONTROL"))
-  {
-    BootKeyboard.press(KEY_LEFT_CTRL);
-  }
-  else if (equalsBuffer(s, e, "CAPSLOCK"))
-  {
-    BootKeyboard.press(KEY_CAPS_LOCK);
-  }
-  else if (equalsBuffer(s, e, "DELETE"))
-  {
-    BootKeyboard.press(KEY_DELETE);
-  }
-  else if (equalsBuffer(s, e, "END"))
-  {
-    BootKeyboard.press(KEY_END);
-  }
-  else if (equalsBuffer(s, e, "ESC") || equalsBuffer(s, e, "ESCAPE"))
-  {
-    BootKeyboard.press(KEY_ESC);
-  }
-  else if (equalsBuffer(s, e, "HOME"))
-  {
-    BootKeyboard.press(KEY_HOME);
-  }
-  else if (equalsBuffer(s, e, "INSERT"))
-  {
-    BootKeyboard.press(KEY_INSERT);
-  }
-  else if (equalsBuffer(s, e, "PAGEUP"))
-  {
-    BootKeyboard.press(KEY_PAGE_UP);
-  }
-  else if (equalsBuffer(s, e, "PAGEDOWN"))
-  {
-    BootKeyboard.press(KEY_PAGE_DOWN);
-  }
-  else if (equalsBuffer(s, e, "SPACE"))
-  {
-    BootKeyboard.press(' ');
-  }
-  else if (equalsBuffer(s, e, "TAB"))
-  {
-    BootKeyboard.press(KEY_TAB);
-  }
-  else if (equalsBuffer(s, e, "BACKSPACE"))
-  {
-    BootKeyboard.press(KEY_BACKSPACE);
-  }
-
-  else if (equalsBuffer(s, e, "UP") || equalsBuffer(s, e, "UPARROW"))
-  {
-    BootKeyboard.press(KEY_UP_ARROW);
-  }
-  else if (equalsBuffer(s, e, "DOWN") || equalsBuffer(s, e, "DOWNARROW"))
-  {
-    BootKeyboard.press(KEY_DOWN_ARROW);
-  }
-  else if (equalsBuffer(s, e, "LEFT") || equalsBuffer(s, e, "LEFTARROW"))
-  {
-    BootKeyboard.press(KEY_LEFT_ARROW);
-  }
-  else if (equalsBuffer(s, e, "RIGHT") || equalsBuffer(s, e, "RIGHTARROW"))
-  {
-    BootKeyboard.press(KEY_RIGHT_ARROW);
-  }
-
-  else if (equalsBuffer(s, e, "PRINTSCREEN"))
-  {
-    BootKeyboard.press(PRINTSCREEN);
-  }
-
-  else if (equalsBuffer(s, e, "F1"))
-  {
-    BootKeyboard.press(KEY_F1);
-  }
-  else if (equalsBuffer(s, e, "F2"))
-  {
-    BootKeyboard.press(KEY_F2);
-  }
-  else if (equalsBuffer(s, e, "F3"))
-  {
-    BootKeyboard.press(KEY_F3);
-  }
-  else if (equalsBuffer(s, e, "F4"))
-  {
-    BootKeyboard.press(KEY_F4);
-  }
-  else if (equalsBuffer(s, e, "F5"))
-  {
-    BootKeyboard.press(KEY_F5);
-  }
-  else if (equalsBuffer(s, e, "F6"))
-  {
-    BootKeyboard.press(KEY_F6);
-  }
-  else if (equalsBuffer(s, e, "F7"))
-  {
-    BootKeyboard.press(KEY_F7);
-  }
-  else if (equalsBuffer(s, e, "F8"))
-  {
-    BootKeyboard.press(KEY_F8);
-  }
-  else if (equalsBuffer(s, e, "F9"))
-  {
-    BootKeyboard.press(KEY_F9);
-  }
-  else if (equalsBuffer(s, e, "F10"))
-  {
-    BootKeyboard.press(KEY_F10);
-  }
-  else if (equalsBuffer(s, e, "F11"))
-  {
-    BootKeyboard.press(KEY_F11);
-  }
-  else if (equalsBuffer(s, e, "F12"))
-  {
-    BootKeyboard.press(KEY_F12);
-  }
-
-  else if (equalsBuffer(s, e, "NUM_0"))
-  {
-    BootKeyboardWrite(KEYPAD_0);
-  }
-  else if (equalsBuffer(s, e, "NUM_1"))
-  {
-    BootKeyboardWrite(KEYPAD_1);
-  }
-  else if (equalsBuffer(s, e, "NUM_2"))
-  {
-    BootKeyboardWrite(KEYPAD_2);
-  }
-  else if (equalsBuffer(s, e, "NUM_3"))
-  {
-    BootKeyboardWrite(KEYPAD_3);
-  }
-  else if (equalsBuffer(s, e, "NUM_4"))
-  {
-    BootKeyboardWrite(KEYPAD_4);
-  }
-  else if (equalsBuffer(s, e, "NUM_5"))
-  {
-    BootKeyboardWrite(KEYPAD_5);
-  }
-  else if (equalsBuffer(s, e, "NUM_6"))
-  {
-    BootKeyboardWrite(KEYPAD_6);
-  }
-  else if (equalsBuffer(s, e, "NUM_7"))
-  {
-    BootKeyboardWrite(KEYPAD_7);
-  }
-  else if (equalsBuffer(s, e, "NUM_8"))
-  {
-    BootKeyboardWrite(KEYPAD_8);
-  }
-  else if (equalsBuffer(s, e, "NUM_9"))
-  {
-    BootKeyboardWrite(KEYPAD_9);
-  }
-  else if (equalsBuffer(s, e, "NUM_ASTERIX"))
-  {
-    BootKeyboardWrite(KEYPAD_ASTERIX);
-  }
-  else if (equalsBuffer(s, e, "NUM_ENTER"))
-  {
-    BootKeyboardWrite(KEYPAD_ENTER);
-  }
-  else if (equalsBuffer(s, e, "NUM_MINUS"))
-  {
-    BootKeyboardWrite(KEYPAD_MINUS);
-  }
-  else if (equalsBuffer(s, e, "NUM_PERIOD"))
-  {
-    BootKeyboardWrite(KEYPAD_PERIOD);
-  }
-  else if (equalsBuffer(s, e, "NUM_PLUS"))
-  {
-    BootKeyboardWrite(KEYPAD_PLUS);
-  }
-
-  else if (equalsBuffer(s, e, "CLICK") || equalsBuffer(s, e, "CLICK_LEFT")
-           || equalsBuffer(s, e, "MOUSECLICK"))
-  {
-    Mouse.click();
-  }
-  else if (equalsBuffer(s, e, "CLICK_RIGHT"))
-  {
-    Mouse.click(MOUSE_RIGHT);
-  }
-  else if (equalsBuffer(s, e, "CLICK_MIDDLE"))
-  {
-    Mouse.click(MOUSE_MIDDLE);
-  }
-
-  else if (equalsBuffer(s, e, "PRESS") || equalsBuffer(s, e, "PRESS_LEFT"))
-  {
-    Mouse.press();
-  }
-  else if (equalsBuffer(s, e, "PRESS_RIGHT"))
-  {
-    Mouse.press(MOUSE_RIGHT);
-  }
-  else if (equalsBuffer(s, e, "PRESS_MIDDLE"))
-  {
-    Mouse.press(MOUSE_MIDDLE);
-  }
-  else if (equalsBuffer(s, e, "RELEASE") || equalsBuffer(s, e, "RELEASE_LEFT"))
-  {
-    Mouse.release();
-  }
-  else if (equalsBuffer(s, e, "RELEASE_RIGHT"))
-  {
-    Mouse.release(MOUSE_RIGHT);
-  }
-  else if (equalsBuffer(s, e, "RELEASE_MIDDLE"))
-  {
-    Mouse.release(MOUSE_MIDDLE);
-  }
-
-  else if (equalsBuffer(s, e, "VOLUME_UP"))
-  {
-    BootKeyboard.write(MEDIA_VOLUME_UP);
-  }
-  else if (equalsBuffer(s, e, "VOLUME_DOWN"))
-  {
-    BootKeyboard.write(MEDIA_VOLUME_DOWN);
-  }
-  else if (equalsBuffer(s, e, "PAUSE"))
-  {
-    BootKeyboard.write(MEDIA_PLAY_PAUSE);
-  }
-  else if (equalsBuffer(s, e, "STOP"))
-  {
-    BootKeyboard.write(MEDIA_STOP);
-  }
-
-  else if (equalsBuffer(s, e, "SHUT_DOWN"))
-  {
-    BootKeyboard.write(SYSTEM_POWER_DOWN);
-  }
-  else if (equalsBuffer(s, e, "SLEEP"))
-  {
-    BootKeyboard.write(SYSTEM_SLEEP);
-  }
-  else if (equalsBuffer(s, e, "WAKE_UP"))
-  {
-    BootKeyboard.write(SYSTEM_WAKE_UP);
-  }
-#ifdef debug
-  else
-  {
-    Serial.println(F("failed to find command"));
-  }
+  else Serial.println("failed to find command");
 #endif
   /* not implemented
-    else if(equalsBuffer(s,e,"APP")) BootKeyboard.press();
-    else if(equalsBuffer(s,e,"MENU")) BootKeyboard.press();
-    else if(equalsBuffer(s,e,"BREAK") || equalsBuffer(s,e,"PAUSE",5))
-    BootKeyboard.press();
-    else if(equalsBuffer(s,e,"NUMLOCK")) BootKeyboard.press();
-    else if(equalsBuffer(s,e,"SCROLLLOCK")) BootKeyboard.press();
+  else if(equalsBuffer(s,e,"APP")) BootKeyboard.press();
+  else if(equalsBuffer(s,e,"MENU")) BootKeyboard.press();
+  else if(equalsBuffer(s,e,"BREAK") || equalsBuffer(s,e,"PAUSE",5)) BootKeyboard.press();
+  else if(equalsBuffer(s,e,"NUMLOCK")) BootKeyboard.press();
+  else if(equalsBuffer(s,e,"SCROLLLOCK")) BootKeyboard.press();
   */
 }
 
-void setup()
-{
-#ifdef debug
-  Serial.begin(115200);
-  delay(2000);
-  Serial.println("Started!");
-#endif
-
+void setup() {
+  #ifdef debug
+    Serial.begin(115200);
+    delay(2000);
+    Serial.println("Started!");
+  #endif
+  
   randomSeed(analogRead(0));
-
+   
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, HIGH);
-
+  
   String scriptName = ""; // Name of the file that will be opened
 
   pinMode(dip1, INPUT_PULLUP);
   pinMode(dip2, INPUT_PULLUP);
   pinMode(dip3, INPUT_PULLUP);
   pinMode(dip4, INPUT_PULLUP);
+  
+  if(digitalRead(dip1) == LOW){scriptName += '1';} else {scriptName += '0';}
+  if(digitalRead(dip2) == LOW){scriptName += '1';} else {scriptName += '0';}
+  if(digitalRead(dip3) == LOW){scriptName += '1';} else {scriptName += '0';}
+  if(digitalRead(dip4) == LOW){scriptName += '1';} else {scriptName += '0';}
+  if(capsLED()){scriptName += "c.txt";} else {scriptName += ".txt";}
 
-  if (digitalRead(dip1) == LOW)
-  {
-    scriptName += '1';
-  }
-  else
-  {
-    scriptName += '0';
-  }
-  if (digitalRead(dip2) == LOW)
-  {
-    scriptName += '1';
-  }
-  else
-  {
-    scriptName += '0';
-  }
-  if (digitalRead(dip3) == LOW)
-  {
-    scriptName += '1';
-  }
-  else
-  {
-    scriptName += '0';
-  }
-  if (digitalRead(dip4) == LOW)
-  {
-    scriptName += '1';
-  }
-  else
-  {
-    scriptName += '0';
-  }
 
-  if (capsLED())
-  {
-    scriptName += "c";
-    Serial.println("Running caps lock script: '" + String(scriptName) + "'");
-  }
-  else
-  {
-    Serial.println("Running script: '" + String(scriptName) + "'");
-  }
-
-  scriptName += ".txt";
-
-  if (!SD.begin(4))
-  {
-#ifdef debug
-    Serial.println(F("couldn't access sd-card :("));
-#endif
+  if(!SD.begin(4)) {
+    #ifdef debug 
+      Serial.println("couldn't access sd-card :(");
+    #endif
     return;
   }
-
+  #ifdef debug
+  Serial.println("Opening script: '" + String(scriptName) + "'");
+  #endif
   payload = SD.open(scriptName);
-  if (!payload)
-  {
-#ifdef debug
-    Serial.println(F("couldn't find script: '") + String(scriptName) + "'");
+  if(!payload){
+#ifdef debug 
+    Serial.println("couldn't find script: '"+String(scriptName)+"'");
 #endif
     return;
-  }
-  else
-  {
+  }else{
     BootKeyboard.begin();
     Mouse.begin();
-    int oldLeds = numLED();
-    while (oldLeds == numLED())
+    
+    int oldLeds = capsLED();
+    int numTries = 0;
+    
+    while (oldLeds == capsLED() && numTries < startingDelay * 5)
     {
-      BootKeyboard.write(KEY_NUM_LOCK);
+      BootKeyboard.write(KEY_CAPS_LOCK);
+      delay(200);
+      numTries++;
     }
     if (capsLED())
     {
       BootKeyboard.write(KEY_CAPS_LOCK);
+#ifdef debug
       Serial.println(F("Killed caps lock"));
+#endif
+      delay(200);
     }
     if (numLED())
     {
       BootKeyboard.write(KEY_NUM_LOCK);
+#ifdef debug
       Serial.println(F("Killed num lock"));
-    }
-    while (payload.available())
-    {
-      buf[bufSize] = payload.read();
-      if (buf[bufSize] == '\r' || buf[bufSize] == '\n' || bufSize >= buffersize)
-      {
-        if (buf[bufSize] == '\r' && payload.peek() == '\n')
-        {
-          payload.read();
-        }
+#endif
+      delay(200);
 
-        //---------REPEAT---------
+    }
+    while(payload.available()){
+
+      buf[bufSize] = payload.read();
+      if(buf[bufSize] == '\r' || buf[bufSize] == '\n' || bufSize >= buffersize){
+        if(buf[bufSize] == '\r' && payload.peek() == '\n') payload.read();
+        
+        //---------REPEAT---------     
         int repeatBufferSize = 0;
         int repeats = 0;
         unsigned long payloadPosition = payload.position();
-
-        for (int i = 0; i < 12; i++)
-        {
-          if (payload.available())
-          {
+        
+        for(int i=0;i<12;i++){
+          if(payload.available()){
             repeatBuffer[repeatBufferSize] = payload.read();
             repeatBufferSize++;
-          }
-          else
-          {
-            break;
-          }
+          }else break;
         }
 
-        if (repeatBufferSize > 6)
-        {
-          if (equals(repeatBuffer, 0, 6, "REPEAT", 6))
-          {
+        if(repeatBufferSize > 6){
+          if(equals(repeatBuffer, 0, 6, "REPEAT", 6)){
             repeats = getInt(repeatBuffer, 6);
           }
         }
 
-        for (int i = 0; i < repeats; i++)
-        {
-          runLine();
-        }
-
+        for(int i=0;i<repeats;i++) runLine();
+        
         payload.seek(payloadPosition);
         //------------------------
-
+        
         runLine();
         bufSize = 0;
       }
-      else
-      {
-        bufSize++;
-      }
+      else bufSize++;
     }
-
-    if (bufSize > 0)
-    {
+    if(bufSize > 0){
       runLine();
       bufSize = 0;
     }
-
     payload.close();
     Mouse.end();
     BootKeyboard.end();
   }
 }
 
-void loop()
-{
-  if(useFeedback) {
-    if (numLED())
-    {
-      digitalWrite(ledPin, HIGH);
-      Serial.println(F("Numlock feedback received, turned feedback LED on!"));
-    }
+void loop() {
+  if(numLED()) 
+  {
+    finished = true;
   }
-  else {
+  if(finished)
+  {
+    ledOn = !ledOn;
+    digitalWrite(ledPin, ledOn);
+    delay(blinkInterval * 2.5);
+  }
+  else
+  {
     ledOn = !ledOn;
     digitalWrite(ledPin, ledOn);
     delay(blinkInterval);
