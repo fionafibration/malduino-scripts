@@ -15,3 +15,4 @@ Malicious:
 1111: Meterpreter through powershell - Windows (requires metasploit)  
 1110: Meterpreter through wget - Windows (requires pastebin and metasploit)    
 1101: Lazagne download and export - Windows (requires webserver with PHP)
+1100: Instant BSOD - Windows (should also cause memory dump)
