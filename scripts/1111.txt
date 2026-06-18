@@ -1,6 +1,6 @@
 REM Meterpreter Shell with USB Rubber Ducky
 REM Original Payload by KernelEquinox
-REM Converted by ThePlasmaRailgun (Finian Blackett)
+REM Converted by Fiona (fionafibration)
 REM Original payload and powershell scripting by KernelEquinox
 REM Opens reverse meterpreter shell to specific IP and port
 REM
